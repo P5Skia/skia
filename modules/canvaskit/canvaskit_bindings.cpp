@@ -1319,7 +1319,12 @@ EMSCRIPTEN_BINDINGS(Skia) {
         .function("setSkewX", &SkFont::setSkewX)
         .function("setEmbolden", &SkFont::setEmbolden)
         .function("setSubpixel", &SkFont::setSubpixel)
-        .function("setTypeface", &SkFont::setTypeface, allow_raw_pointers());
+        .function("setTypeface", &SkFont::setTypeface, allow_raw_pointers())
+        .function("measureText", optional_override([](SkFont& self, std::string text) {
+            // Skia removed this API.
+            // P5Skia - we need this, so we bring it back from hell.
+            return self.measureText(text.c_str(), text.length(), SkTextEncoding::kUTF8);
+        }));        
 
     class_<SkFontMgr>("FontMgr")
         .smart_ptr<sk_sp<SkFontMgr>>("sk_sp<FontMgr>")
