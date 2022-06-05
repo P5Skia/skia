@@ -58,6 +58,8 @@
 #include "src/image/SkImage_Base.h"
 #include "src/sksl/SkSLCompiler.h"
 
+#include "include/utils/SkTextUtils.h"  // P5Skia
+
 #include "modules/canvaskit/WasmCommon.h"
 #include <emscripten.h>
 #include <emscripten/bind.h>
@@ -361,6 +363,18 @@ JSString ToSVGString(const SkPath& path) {
     SkParsePath::ToSVGString(path, &s);
     return emscripten::val(s.c_str());
 }
+
+// P5Skia
+SkPathOrNull MakePathFromText( WASMPointerU8 sptr,
+    size_t strBtyes,
+    const SkFont& font,
+    int x, 
+    int y) {
+    const char* str = reinterpret_cast<const char*>(sptr);
+    SkPath path;
+    SkTextUtils::GetPath(str, strBtyes, SkTextEncoding::kUTF8, x, y, font, &path);
+    return emscripten::val(path);
+} 
 
 SkPathOrNull MakePathFromSVGString(std::string str) {
     SkPath path;
@@ -1553,6 +1567,7 @@ EMSCRIPTEN_BINDINGS(Skia) {
 #ifdef CK_INCLUDE_PATHOPS
         .class_function("MakeFromOp", &MakePathFromOp)
 #endif
+        .class_function("_MakeFromText", &MakePathFromText)  // P5Skia 
         .class_function("MakeFromSVGString", &MakePathFromSVGString)
         .class_function("_MakeFromCmds", &MakePathFromCmds)
         .class_function("_MakeFromVerbsPointsWeights", &MakePathFromVerbsPointsWeights)
@@ -1599,6 +1614,10 @@ EMSCRIPTEN_BINDINGS(Skia) {
         .function("_close", &ApplyClose)
         .function("_conicTo", &ApplyConicTo)
         .function("countPoints", &SkPath::countPoints)
+        .function("countVerbs", &SkPath::countVerbs)  // P5Skia
+        .function("countWeights", &SkPath::countWeights)  // P5Skia   
+        .function("getVerb", &SkPath::getVerb)  // P5Skia
+        .function("getWeight", &SkPath::getWeight)  // P5Skia      
         .function("contains", &SkPath::contains)
         .function("_cubicTo", &ApplyCubicTo)
         .function("_getPoint", optional_override([](SkPath& self, int index,

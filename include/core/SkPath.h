@@ -450,6 +450,10 @@ public:
     */
     int getVerbs(uint8_t verbs[], int max) const;
 
+    int countWeights() const; // P5Skia
+    uint8_t getVerb(int index) const; // P5Skia
+    float getWeight(int index) const; // P5Skia    
+
     /** Returns the approximate byte size of the SkPath in memory.
 
         @return  approximate size

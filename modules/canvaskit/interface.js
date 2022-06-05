@@ -56,6 +56,21 @@ CanvasKit.onRuntimeInitialized = function() {
     return path;
   };
 
+  // P5Skia
+  CanvasKit.Path.MakeFromText = function(str, font, x, y) {
+    // lengthBytesUTF8 and stringToUTF8Array are defined in the emscripten
+    // JS.  See https://kripken.github.io/emscripten-site/docs/api_reference/preamble.js.html#stringToUTF8
+    // Add 1 for null terminator
+    var strLen = lengthBytesUTF8(str) + 1;
+    var strPtr = CanvasKit._malloc(strLen);
+    // Add 1 for the null terminator.
+    stringToUTF8(str, strPtr, strLen);
+
+    var path = CanvasKit.Path._MakeFromText(strPtr, strLen - 1, font, x, y);
+    CanvasKit._free(strPtr);
+    return path;
+  }; 
+
   // The weights array is optional (only used for conics).
   CanvasKit.Path.MakeFromVerbsPointsWeights = function(verbs, pts, weights) {
     var verbsPtr = copy1dArray(verbs, 'HEAPU8');

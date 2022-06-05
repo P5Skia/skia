@@ -550,6 +550,24 @@ int SkPath::getVerbs(uint8_t dst[], int max) const {
     return fPathRef->countVerbs();
 }
 
+int SkPath::countWeights() const {
+    return fPathRef->countWeights();
+}
+
+uint8_t SkPath::getVerb(int index) const { // P5Skia
+    if ((unsigned)index < (unsigned)fPathRef->countVerbs()) {
+        return fPathRef->atVerb(index);
+    }
+    return SkPath::Verb::kDone_Verb;
+}
+
+float SkPath::getWeight(int index) const { // P5Skia
+    if ((unsigned)index < (unsigned)fPathRef->countWeights()) {
+        return fPathRef->atWeight(index);
+    }
+    return SK_ScalarHalf;
+}
+
 size_t SkPath::approximateBytesUsed() const {
     size_t size = sizeof (SkPath);
     if (fPathRef != nullptr) {

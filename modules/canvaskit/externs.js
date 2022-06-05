@@ -545,6 +545,7 @@ var CanvasKit = {
     MakeFromSVGString: function() {},
     MakeFromOp: function() {},
     MakeFromVerbsPointsWeights: function() {},
+    MakeFromText: function() {}, // P5Skia
     contains: function() {},
     /** @return {CanvasKit.Path} */
     copy: function() {},
@@ -599,6 +600,7 @@ var CanvasKit = {
 
     // private API
     _MakeFromCmds: function() {},
+    _MakeFromText: function() {}, // P5Skia
     _MakeFromVerbsPointsWeights: function() {},
     _addArc: function() {},
     _addOval: function() {},

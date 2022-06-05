@@ -18,6 +18,8 @@
 #include "src/core/SkTextBlobPriv.h"
 #include "src/core/SkWriteBuffer.h"
 
+#include "modules/skshaper/include/SkShaper.h" // P5Skia
+
 #include <atomic>
 #include <limits>
 #include <new>
@@ -775,6 +777,18 @@ sk_sp<SkTextBlob> SkTextBlobPriv::MakeFromBuffer(SkReadBuffer& reader) {
 
 sk_sp<SkTextBlob> SkTextBlob::MakeFromText(const void* text, size_t byteLength, const SkFont& font,
                                            SkTextEncoding encoding) {
+    static bool bShaper = true;
+    // P5Skia - we need shaper to work by default.
+    if (bShaper) {
+        SkFontMetrics metrics;
+        font.getMetrics(&metrics);
+
+        std::unique_ptr<SkShaper> shaper = SkShaper::Make();
+        SkTextBlobBuilderRunHandler builder((const char*)text, {0, metrics.fAscent});
+        shaper->shape((const char*)text, byteLength, font, true, 10000000, &builder);
+        return builder.makeBlob();
+    }
+
     // Note: we deliberately promote this to fully positioned blobs, since we'd have to pay the
     // same cost down stream (i.e. computing bounds), so its cheaper to pay the cost once now.
     const int count = font.countText(text, byteLength, encoding);
@@ -824,10 +838,55 @@ sk_sp<SkTextBlob> SkTextBlob::MakeFromRSXform(const void* text, size_t byteLengt
         return nullptr;
     }
     SkTextBlobBuilder builder;
-    auto buffer = builder.allocRunRSXform(font, count);
-    font.textToGlyphs(text, byteLength, encoding, buffer.glyphs, count);
+    auto buffer = builder.allocRunRSXform(font, count);    
+
+    //font.textToGlyphs(text, byteLength, encoding, buffer.glyphs, count);
+    //memcpy(buffer.xforms(), xform, count * sizeof(SkRSXform));
+    //return builder.make();
+
+    // P5Skia
+    SkFontMetrics metrics;
+    font.getMetrics(&metrics);
+
+    std::unique_ptr<SkShaper> shaper = SkShaper::Make();
+    SkTextBlobBuilderRunHandler builderShape((const char*)text, {0, metrics.fAscent});
+    shaper->shape((const char*)text, byteLength, font, true, 10000000, &builderShape);
+
     memcpy(buffer.xforms(), xform, count * sizeof(SkRSXform));
-    return builder.make();
+
+    sk_sp<SkTextBlob> blobShape = builderShape.makeBlob();
+
+    int g = 0;
+    for (SkTextBlobRunIterator it(blobShape.get()); !it.done(); it.next()) {
+        size_t runSize = it.glyphCount();
+
+        if (runSize == 0) {
+            continue;
+        }
+
+        SkAutoTArray<SkPoint> pos(runSize);
+        font.getPos(it.glyphs(), runSize, pos.get(), { 0, 0 });
+        
+        const SkPoint* pts = it.points();
+        
+       
+        for (size_t i = 0; i < runSize; i++) {
+            int xxx = (g + i);
+            //buffer.xforms()[xxx].fTx += (pts[i].fX - pos.get()[i].fX) * buffer.xforms()[xxx].fSCos;
+            //buffer.xforms()[xxx].fTy += (pts[i].fY - pos.get()[i].fY) * buffer.xforms()[xxx].fSSin; 
+            buffer.xforms()[xxx].fTx += (pts[i].fX - pos.get()[i].fX - pts[0].fX) * buffer.xforms()[xxx].fSCos;  
+            buffer.xforms()[xxx].fTy += (pts[i].fX - pos.get()[i].fX - pts[0].fX) * buffer.xforms()[xxx].fSSin;
+
+            buffer.xforms()[xxx].fTx += (pts[i].fY - pos.get()[i].fY) * buffer.xforms()[xxx].fSCos;  
+            buffer.xforms()[xxx].fTy += (pts[i].fY - pos.get()[i].fY) * buffer.xforms()[xxx].fSSin;
+        }
+        
+ 
+
+        memcpy(&buffer.glyphs[g], it.glyphs(), runSize * sizeof(SkGlyphID));
+        g += runSize; // This is bug?
+    }   
+    return builder.make(); 
 }
 
 sk_sp<SkData> SkTextBlob::serialize(const SkSerialProcs& procs) const {

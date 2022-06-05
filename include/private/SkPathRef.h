@@ -317,6 +317,7 @@ public:
      */
     uint8_t atVerb(int index) const { return fVerbs[index]; }
     const SkPoint& atPoint(int index) const { return fPoints[index]; }
+    float atWeight(int index) const { return fConicWeights[index]; } // P5Skia
 
     bool operator== (const SkPathRef& ref) const;
 
