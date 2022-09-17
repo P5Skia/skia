@@ -2,7 +2,7 @@ clean:
 	- rm -rf ../../out/canvaskit_wasm
 	- rm -rf ./npm_build/bin
 	- rm -rf ./build/
-	$(MAKE) release
+	# $(MAKE) release
 
 release:
 	# Does an incremental build where possible.
@@ -11,6 +11,10 @@ release:
 	mkdir build
 	cp ../../out/canvaskit_wasm/canvaskit.js   ./build/
 	cp ../../out/canvaskit_wasm/canvaskit.wasm ./build/
+
+p5update:
+	cp ./build/canvaskit.js ../../../P5Skia/lib/
+	cp ./build/canvaskit.wasm ../../../P5Skia/lib/
 
 release_cpu:
 	# Does an incremental build where possible.
